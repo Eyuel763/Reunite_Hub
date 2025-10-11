@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'channels',
     'celery',
     'accounts',
+    'reports',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
