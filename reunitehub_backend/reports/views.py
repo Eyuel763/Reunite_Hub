@@ -5,18 +5,20 @@ from .serializers import ReportSerializer, SightingSerializer, TipSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound
 from .permissions import IsOwnerOrReadOnly
+from .filters import ReportFilter
 
 class ReportListCreateView(generics.ListCreateAPIView):
     """
-    GET: Lists all verified (or pending) reports for public search.
+    GET: Lists all verified (or pending) reports for public search and filtering.
     POST: Creates a new report. Requires authentication.
     """
     queryset = Report.objects.filter(status__in=['pending', 'verified']).order_by('-created_at')
     serializer_class = ReportSerializer
     permission_classes = [IsAuthenticatedOrReadOnly] 
+    filterset_class = ReportFilter
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(reported_by=self.requested.user)
 
 class ReportDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
