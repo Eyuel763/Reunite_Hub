@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'accounts',
     'reports',
     'volunteers',
+    'resources',
     'django_filters',
 ]
 
