@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'celery',
     'accounts',
     'reports',
+    'volunteers',
     'django_filters',
 ]
 
