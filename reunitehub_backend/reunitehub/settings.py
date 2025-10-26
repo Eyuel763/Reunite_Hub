@@ -40,11 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'channels',
     'celery',
     'accounts',
     'reports',
     'volunteers',
+    'channels',
     'resources',
     'django_filters',
 ]
@@ -90,7 +90,24 @@ TEMPLATES = [
     },
 ]
 
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC' 
+
 WSGI_APPLICATION = 'reunitehub.wsgi.application'
+ASGI_APPLICATION = 'reunitehub.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.pubsub.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)], 
+        },
+    },
+}
 
 
 # Database
