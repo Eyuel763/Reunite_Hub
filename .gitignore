@@ -42,3 +42,5 @@ static_cdn/
 htmlcov/
 .tox/
 .pytest_cache/
+
+Frontend_Documentation.docx
