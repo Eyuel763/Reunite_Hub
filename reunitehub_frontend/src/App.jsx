@@ -1,15 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from './app/AuthContext';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const { user } = useContext(AuthContext);
+
   return (
-    <h1 className="text-3xl font-bold text-blue-600">
-      ReuniteHub Starting...
-    </h1>
-  )
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/reports" />} />
+        
+        {/* Protected Routes */}
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute>
+              <div className="p-10 text-2xl font-bold text-gray-800">
+                Reports Dashboard
+              </div>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Default Redirects */}
+        <Route path="/" element={<Navigate to={user ? "/reports" : "/login"} />} />
+        <Route path="*" element={<div className="p-10">404 - Page Not Found</div>} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
