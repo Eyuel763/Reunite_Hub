@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { AuthContext } from './app/AuthContext';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import Register from './pages/Register';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/reports" />} />
+        <Route path="/register" element={!user ? <Register /> : <Navigate to="/reports" />} />
         
         {/* Protected Routes */}
         <Route 
