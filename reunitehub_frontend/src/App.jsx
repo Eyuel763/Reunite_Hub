@@ -4,6 +4,7 @@ import { AuthContext } from './app/AuthContext';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import Register from './pages/Register';
+import Reports from './pages/Reports';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -20,9 +21,7 @@ function App() {
           path="/reports" 
           element={
             <ProtectedRoute>
-              <div className="p-10 text-2xl font-bold text-gray-800">
-                Reports Dashboard
-              </div>
+              <Reports />
             </ProtectedRoute>
           } 
         />

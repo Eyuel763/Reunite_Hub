@@ -11,8 +11,8 @@ const Register = () => {
         phone: '',
         password: '',
         confirm_password: '',
-        role: 'Regular', // Default from documentation
-        language: 'en'   // Default from documentation
+        role: 'Regular', // Default 
+        language: 'en'   // Default 
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -31,9 +31,9 @@ const Register = () => {
 
         try {
             // Send formatted JSON to backend
-            const { confirm_password, ...payload } = formData;
-            await registerApi(payload);
-            navigate('/login');
+            const { confirm_password, ...payload } = formData; 
+            await registerApi(payload); 
+            navigate('/login'); // Redirect to login after successful registration
         } catch (err) {
             setError(err.response?.data?.detail || 'Registration failed. Check your details.');
         } finally {
@@ -70,7 +70,7 @@ const Register = () => {
                                     type="text" required
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     placeholder="Alem"
-                                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                                    onChange={(e) => setFormData({...formData, first_name: e.target.value})} 
                                 />
                             </div>
                             <div>
