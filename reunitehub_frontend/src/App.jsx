@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import Register from './pages/Register';
 import Reports from './pages/Reports';
+import ReportDetail from './pages/ReportDetail';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -25,6 +26,14 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route
+          path="/reports/:id"
+          element={
+            <ProtectedRoute>
+              <ReportDetail />
+            </ProtectedRoute>
+          }
+          />
 
         {/* Default Redirects */}
         <Route path="/" element={<Navigate to={user ? "/reports" : "/login"} />} />
