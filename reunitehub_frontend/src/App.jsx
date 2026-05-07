@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Register from './pages/Register';
 import Reports from './pages/Reports';
 import ReportDetail from './pages/ReportDetail';
+import CreateReport from './pages/CreateReport';
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -31,6 +32,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ReportDetail />
+            </ProtectedRoute>
+          }
+          />
+
+        <Route
+          path="/create-report"
+          element={
+            <ProtectedRoute>
+              <CreateReport />
             </ProtectedRoute>
           }
           />
