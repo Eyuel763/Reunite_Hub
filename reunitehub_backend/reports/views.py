@@ -20,7 +20,7 @@ class ReportListCreateView(generics.ListCreateAPIView):
     filterset_class = ReportFilter
 
     def perform_create(self, serializer):
-        serializer.save(reported_by=self.requested.user)
+        serializer.save(reported_by=self.request.user)
 
 class ReportDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -86,27 +86,3 @@ class TipListCreateView(generics.ListCreateAPIView):
             raise NotFound("Missing Person Report not found.")
 
         serializer.save(report=report)
-
-class ReportDetailView(generics.RetrieveUpdateDestroyAPIView):
-    # ... (Keep existing queryset, serializer_class, and permission_classes)
-    
-    # Override perform_update to trigger the Celery task
-    def perform_update(self, serializer):
-        # Retrieve the old status before saving changes
-        old_status = serializer.instance.status
-        
-        # Save the updated object
-        instance = serializer.save()
-        
-        # Check if the status changed to 'verified' (e.g., by a moderator/admin)
-        if old_status != 'verified' and instance.status == 'verified':
-            # Trigger the asynchronous task to send alerts
-            # .delay() is a Celery shortcut for .apply_async()
-            send_critical_alert.delay(
-                report_id=instance.id, 
-                full_name=instance.full_name, 
-                location=instance.last_seen_location
-            )
-            
-            # NOTE: We would also trigger a WebSocket broadcast here (next step).
-
