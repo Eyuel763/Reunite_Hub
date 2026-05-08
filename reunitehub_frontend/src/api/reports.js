@@ -7,4 +7,6 @@ export const getReports = () => api.get("/reports/");
 export const getReportDetails = (id) => api.get(`/reports/${id}`);
 
 // Create a new report
-export const createReport = (data) => api.post("/reports/", data);
+export const createReport = (formData) => api.post("/reports/", formData);
+
+export const createSighting = (reportId, formData) => api.post(`/reports/${reportId}/sightings/`, formData)

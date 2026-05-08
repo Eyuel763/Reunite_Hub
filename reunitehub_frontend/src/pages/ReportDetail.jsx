@@ -54,8 +54,8 @@ const ReportDetail = () => {
                         <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
                             <div className="relative">
                                 <img 
-                                    src={report.image  || 'https://via.placeholder.com/400x500?text=No+Image'} 
-                                    alt="Missing Person" 
+                                    src={report.photo  || 'https://via.placeholder.com/400x500?text=No+Image'} 
+                                    alt={report.full_name}
                                     className="w-full aspect-[4/5] object-cover" 
                                 />
                                 <div className="absolute bottom-4 left-4 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
