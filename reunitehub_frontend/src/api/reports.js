@@ -1,7 +1,8 @@
 import api from './axios'
 
-// Fetch all reports (Django will handle pagination)
-export const getReports = () => api.get("/reports/"); 
+// Fetching all reports (when params is empty)
+// Fetching filtered reports (when params contains gender, location, etc.)
+export const getReports = (params) => api.get("/reports/", { params });
 
 // Fetch a single report by ID
 export const getReportDetails = (id) => api.get(`/reports/${id}`);

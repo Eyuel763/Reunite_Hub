@@ -1,20 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    ArrowLeft, Filter, Plus, MapPin, 
-    SlidersHorizontal, ChevronLeft, ChevronRight 
+    ArrowLeft, Filter, Plus, MapPin, Search,
+    SlidersHorizontal, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { getReports } from '../api/reports';
 
 const Reports = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [error, setError] = useState(null);
+    const [filters, setFilters] = useState({
+        location: '',
+        gender: '',
+        age: ''
+    });
 
     useEffect(() => {
         const fetchReports = async () => {
+            setLoading(true);
             try {
-                const response = await getReports();
+                const activeFilters = Object.fromEntries(
+                    Object.entries(filters).filter(([_, v]) => v !== '')
+                );
+                const response = await getReports(activeFilters);
                 setReports(response.data);
             } catch (err) {
                 setError('Failed to load reports. Please try again later.');
@@ -23,7 +33,11 @@ const Reports = () => {
             }
         };
         fetchReports();
-    }, []);
+    }, [filters]); // Refetch reports when filters change
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }))
+    }
 
     return (
         <div className="bg-gray-50 min-h-screen font-sans">
@@ -37,7 +51,10 @@ const Reports = () => {
                         <h1 className="text-xl font-bold text-gray-900">Missing Reports</h1>
                     </div>
                     <div className="flex gap-3">
-                        <button className="md:hidden bg-gray-100 p-2 rounded-lg text-gray-600">
+                        <button 
+                            onClick={() => setShowMobileFilters(true)}
+                            className="md:hidden bg-gray-100 p-2 rounded-lg text-gray-600"
+                        >
                             <Filter size={20} />
                         </button>
                         <Link to="/create-report" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">
@@ -50,35 +67,74 @@ const Reports = () => {
             <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
                 
                 {/* Sidebar Filters */}
-                <aside className="hidden md:block w-64 flex-shrink-0">
+                <aside className={`
+                    fixed inset-0 z-50 bg-white p-6 transition-transform duration-300 md:relative md:inset-auto md:z-0 md:translate-x-0 md:block md:w-64 md:bg-transparent md:p-0
+                    ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}
+                `}>
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
-                        <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <SlidersHorizontal size={18} className="text-blue-600" /> Filters
-                        </h3>
+                        {/* Mobile Close Button */}
+                        <div className="flex justify-between items-center mb-6 md:mb-6">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <SlidersHorizontal size={18} className="text-blue-600" /> Filters
+                            </h3>
+                            <button 
+                                onClick={() => setShowMobileFilters(false)}
+                                className="md:hidden text-gray-400 p-1"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
                         
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Location</label>
-                                <select className="w-full bg-gray-50 border-none rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <option>All Regions</option>
-                                    <option>Addis Ababa</option>
-                                    <option>Oromia</option>
-                                    <option>Amhara</option>
+                                <select 
+                                className="w-full bg-gray-50 border-none rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={filters.location}
+                                    onChange={(e) => handleFilterChange('location', e.target.value)}>
+                                    <option value="">All Regions</option>
+                                    <option value="Addis Ababa">Addis Ababa</option>
+                                    <option value="Oromia">Oromia</option>
+                                    <option value="Amhara">Amhara</option>
                                 </select>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Gender</label>
                                 <div className="space-y-2">
-                                    {['Male', 'Female'].map(gender => (
-                                        <label key={gender} className="flex items-center text-sm text-gray-600 cursor-pointer">
-                                            <input type="checkbox" className="rounded text-blue-600 mr-2 focus:ring-blue-500" /> {gender}
+                                    {['male', 'female'].map(g => (
+                                        <label key={g} className="flex items-center text-sm text-gray-600 cursor-pointer">
+                                            <input type="radio" 
+                                                    name='gender' 
+                                                    className="rounded text-blue-600 mr-2 focus:ring-blue-500" 
+                                                    checked={filters.gender === g}
+                                                    onChange={() => handleFilterChange('gender', g)}
+                                                    /> {g}
                                         </label>
                                     ))}
                                 </div>
                             </div>
 
-                            <button className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Age Range</label>
+                                <select 
+                                    className="w-full bg-gray-50 border-none rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500"
+                                    value={filters.age_range}
+                                    onChange={(e) => handleFilterChange('age_range', e.target.value)}
+                                >
+                                    <option value="">Any Age</option>
+                                    <option value="minor">0-17 (Minor)</option>
+                                    <option value="adult">18+ (Adult)</option>
+                                </select>
+                            </div>
+
+                            <button 
+                                onClick={() => {
+                                    setFilters({ location: '', gender: '', age_range: '' });
+                                    if (window.innerWidth < 768) setShowMobileFilters(false);
+                                }}
+                                className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-100 transition"
+                            >
                                 Clear All
                             </button>
                         </div>
@@ -155,6 +211,15 @@ const Reports = () => {
                     )}
                 </main>
             </div>
+
+            {/* Background Overlay (Darkens the screen when mobile filters are open) */}
+            {showMobileFilters && (
+                <div 
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setShowMobileFilters(false)}
+                />
+            )}
+
         </div>
     );
 };
