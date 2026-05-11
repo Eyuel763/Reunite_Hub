@@ -10,4 +10,8 @@ export const getReportDetails = (id) => api.get(`/reports/${id}`);
 // Create a new report
 export const createReport = (formData) => api.post("/reports/", formData);
 
-export const createSighting = (reportId, formData) => api.post(`/reports/${reportId}/sightings/`, formData)
+// Create a new sighting for a specific report
+export const createSighting = (reportId, formData) => api.post(`/reports/${reportId}/sightings`, formData)
+
+// Fetch sightings for a specific report
+export const getSightings = (reportId) => api.get(`/reports/${reportId}/sightings`);

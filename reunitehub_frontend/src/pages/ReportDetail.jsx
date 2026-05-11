@@ -1,30 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-    ChevronLeft, Share2, Flag, Eye, 
-    Zap, Bolt, Info 
+import {
+    ChevronLeft, Share2, Flag, Eye, MapPin,
+    Zap, Bolt, Info, CheckCircle, X, Camera
 } from 'lucide-react';
-import { getReportDetails } from '../api/reports';
+import { getReportDetails, createSighting, getSightings } from '../api/reports';
+
 
 const ReportDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [report, setReport] = useState(null);
+    const [sightings, setSightings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // State for sighting form
+    const [isSightingModalOpen, setIsSightingModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const fileInputRef = useRef(null);
+    const [imagePreview, setImagePreview] = useState(null);
+
+    const [sightingData, setSightingData] = useState({
+        sighting_date: '',
+        location_description: '',
+        clothing_description: '',
+        latitude: 9.0343, // Default placeholder
+        longitude: 38.7469,
+        photo: null
+    });
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSightingData({ ...sightingData, photo: file });
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSightingSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        const data = new FormData();
+        data.append('sighting_date', new Date(sightingData.sighting_date).toISOString());
+        data.append('location_description', sightingData.location_description);
+        data.append('clothing_description', sightingData.clothing_description);
+        data.append('latitude', sightingData.latitude);
+        data.append('longitude', sightingData.longitude);
+
+        if (sightingData.photo) {
+            data.append('photo', sightingData.photo);
+        }
+
+        try {
+            await createSighting(id, data);
+            alert("Sighting submitted successfully! It will be verified soon.");
+            setIsSightingModalOpen(false);
+            setSightingData({ 
+                sighting_date: '',
+                location_description: '',
+                clothing_description: '',
+                latitude: 9.0343,
+                longitude: 38.7469,
+                photo: null
+             });
+            setImagePreview(null);
+        } catch (err) {
+            alert("Failed to submit sighting. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDetails = async () => {
+        const fetchAllData = async () => {
             try {
-                const response = await getReportDetails(id);
-                setReport(response.data);
+                const [reportRes, sightingsRes] = await Promise.all([
+                    getReportDetails(id),
+                    getSightings(id)
+                ]);
+                setReport(reportRes.data);
+                setSightings(sightingsRes.data);
             } catch (err) {
                 setError('Could not load the report details.');
             } finally {
                 setLoading(false);
             }
         };
-        fetchDetails();
+        fetchAllData();
     }, [id]);
 
     if (loading) return <div className="p-20 text-center font-bold">Loading report...</div>;
@@ -48,15 +111,15 @@ const ReportDetail = () => {
 
             <main className="max-w-5xl mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
+
                     {/* Left Column: Image and Basic Info */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
                             <div className="relative">
-                                <img 
-                                    src={report.photo  || 'https://via.placeholder.com/400x500?text=No+Image'} 
+                                <img
+                                    src={report.photo || 'https://via.placeholder.com/400x500?text=No+Image'}
                                     alt={report.full_name}
-                                    className="w-full aspect-[4/5] object-cover" 
+                                    className="w-full aspect-[4/5] object-cover"
                                 />
                                 <div className="absolute bottom-4 left-4 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
                                     {report.status || 'Missing'}
@@ -88,7 +151,7 @@ const ReportDetail = () => {
 
                     {/* Right Column: Timeline, Sightings, and Actions */}
                     <div className="lg:col-span-2 space-y-6">
-                        
+
                         {/* Real-time Status Alert */}
                         {/* <div className="bg-blue-600 rounded-2xl p-4 text-white flex items-center justify-between shadow-blue-200 shadow-lg">
                             <div className="flex items-center gap-3">
@@ -107,32 +170,63 @@ const ReportDetail = () => {
                         </div>
 
                         {/* Sightings Feed */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="flex border-b border-gray-100">
-                                <button className="flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600">SIGHTINGS</button>
-                                <button className="flex-1 py-4 text-sm font-bold text-gray-400 hover:text-gray-600 transition">TIPS</button>
-                            </div>
-                            <div className="p-6 space-y-6">
-                                {/* Sample Sighting Item */}
-                                <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                                        <Eye size={16} className="text-gray-400" />
+                        <section className="mt-12">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                        Recent Sightings
+                    </h3>
+                    <span className="bg-blue-100 text-blue-700 text-xs font-black px-3 py-1 rounded-full">
+                        {sightings.length} UPDATES
+                    </span>
+                </div>
+
+                {sightings.length === 0 ? (
+                    <div className="bg-white border-2 border-dashed border-gray-100 rounded-3xl p-10 text-center">
+                        <p className="text-gray-400 font-medium">No sightings reported yet.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {sightings.map((sighting) => (
+                            <div key={sighting.id} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50 flex gap-5">
+                                {sighting.photo && (
+                                    <img 
+                                        src={sighting.photo} 
+                                        className="w-24 h-24 rounded-2xl object-cover flex-shrink-0" 
+                                        alt="Sighting" 
+                                    />
+                                )}
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-gray-900 flex items-center gap-1">
+                                            <MapPin size={14} className="text-blue-600" />
+                                            {sighting.location_description}
+                                        </h4>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase">
+                                            {new Date(sighting.sighting_date).toLocaleDateString()}
+                                        </span>
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-sm text-gray-900">Recent Sighting Near {report.last_seen_location}</span>
-                                            <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded uppercase">Verified</span>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mb-2">Reported by Community Member • 2 hours ago</p>
-                                        <p className="text-sm text-gray-600">Last reported location matches original region. Search teams are notified.</p>
+                                    <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                                        {sighting.clothing_description}
+                                    </p>
+                                    <div className="inline-flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                        <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">
+                                            Verified Sighting
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ))}
+                    </div>
+                )}
+            </section>
 
                         {/* Action Buttons */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-100">
+                        <div className="grid grid-cols-2 gap-4 mt-6">
+                            <button
+                                onClick={() => setIsSightingModalOpen(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-100"
+                            >
                                 SUBMIT SIGHTING
                             </button>
                             <button className="bg-white border-2 border-gray-200 hover:border-gray-900 text-gray-900 py-4 rounded-2xl font-black text-sm transition-all">
@@ -143,6 +237,81 @@ const ReportDetail = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Sighting Modal Overlay */}
+            {isSightingModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <h2 className="text-xl font-black text-gray-900">New Sighting</h2>
+                            <button onClick={() => setIsSightingModalOpen(false)}><X size={24} /></button>
+                        </div>
+
+                        <form onSubmit={handleSightingSubmit} className="p-6 space-y-4">
+                            {/* Photo Slot */}
+                            <div 
+                                onClick={() => fileInputRef.current.click()}
+                                className="h-32 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 flex items-center justify-center cursor-pointer overflow-hidden"
+                            >
+                                {imagePreview ? (
+                                    <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                                ) : (
+                                    <Camera className="text-gray-400" size={24} />
+                                )}
+                                <input type="file" ref={fileInputRef} hidden accept="image/*" 
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setSightingData({...sightingData, photo: file});
+                                            setImagePreview(URL.createObjectURL(file));
+                                        }
+                                    }} 
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">When did you see them?</label>
+                                    <input 
+                                        type="datetime-local" required
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm"
+                                        onChange={(e) => setSightingData({...sightingData, sighting_date: e.target.value})}
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Where (Location Description)</label>
+                                    <input 
+                                        type="text" required placeholder="e.g. Piassa bus terminal"
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm"
+                                        value={sightingData.location_description}
+                                        onChange={(e) => setSightingData({...sightingData, location_description: e.target.value})}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Clothing / Details</label>
+                                    <textarea 
+                                        required placeholder="e.g. Blue hoodie, carrying a red bag"
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm resize-none"
+                                        rows="2"
+                                        value={sightingData.clothing_description}
+                                        onChange={(e) => setSightingData({...sightingData, clothing_description: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" disabled={isSubmitting}
+                                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg disabled:opacity-50"
+                            >
+                                {isSubmitting ? "Sending..." : "Submit Sighting"}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
