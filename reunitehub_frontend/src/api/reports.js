@@ -15,3 +15,10 @@ export const createSighting = (reportId, formData) => api.post(`/reports/${repor
 
 // Fetch sightings for a specific report
 export const getSightings = (reportId) => api.get(`/reports/${reportId}/sightings`);
+
+// Fetch tips for a specific report
+export const getTips = (reportId) => api.get(`/reports/${reportId}/tips/`);
+
+// Create a new tip for a specific report
+export const createTip = (reportId, tipData) => 
+    api.post(`/reports/${reportId}/tips`, tipData);

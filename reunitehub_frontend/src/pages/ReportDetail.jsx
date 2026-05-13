@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { createTip } from '../api/reports';
 import {
-    ChevronLeft, Share2, Flag, Eye, MapPin,
+    ChevronLeft, Share2, Flag, Eye, MapPin, ShieldAlert, Phone, Send,
     Zap, Bolt, Info, CheckCircle, X, Camera
 } from 'lucide-react';
 import { getReportDetails, createSighting, getSightings } from '../api/reports';
@@ -14,6 +15,9 @@ const ReportDetail = () => {
     const [sightings, setSightings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // State for tip form
+    const [isTipModalOpen, setIsTipModalOpen] = useState(false);
+    const [isSubmittingTip, setIsSubmittingTip] = useState(false);
     // State for sighting form
     const [isSightingModalOpen, setIsSightingModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +31,11 @@ const ReportDetail = () => {
         latitude: 9.0343, // Default placeholder
         longitude: 38.7469,
         photo: null
+    });
+
+    const [tipData, setTipData] = useState({
+        content: '',
+        contact_phone: ''
     });
 
     const handleImageChange = (e) => {
@@ -69,6 +78,22 @@ const ReportDetail = () => {
             alert("Failed to submit sighting. Please try again.");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleTipSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmittingTip(true);
+
+        try {
+            await createTip(id, tipData);
+            alert("Anonymous tip sent. Thank you for your bravery and help.");
+            setIsTipModalOpen(false);
+            setTipData({ content: '', contact_phone: '' });
+        } catch (err) {
+            alert("Error sending tip. Please try again.");
+        } finally {
+            setIsSubmittingTip(false);
         }
     };
 
@@ -229,7 +254,10 @@ const ReportDetail = () => {
                             >
                                 SUBMIT SIGHTING
                             </button>
-                            <button className="bg-white border-2 border-gray-200 hover:border-gray-900 text-gray-900 py-4 rounded-2xl font-black text-sm transition-all">
+                            <button
+                                onClick={() => setIsTipModalOpen(true)}
+                                className="bg-white border-2 border-gray-200 hover:border-gray-900 text-gray-900 py-4 rounded-2xl font-black text-sm transition-all"
+                            >
                                 ANONYMOUS TIP
                             </button>
                         </div>
@@ -306,6 +334,65 @@ const ReportDetail = () => {
                                 className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg disabled:opacity-50"
                             >
                                 {isSubmitting ? "Sending..." : "Submit Sighting"}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Anonymous Tip Modal */}
+            {isTipModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <ShieldAlert size={20} className="text-yellow-400" />
+                                <h2 className="text-lg font-black uppercase tracking-tight">Anonymous Tip</h2>
+                            </div>
+                            <button onClick={() => setIsTipModalOpen(false)} className="text-gray-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleTipSubmit} className="p-6 space-y-5">
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                Your identity is protected. This information goes directly to the case manager.
+                            </p>
+
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Information Content</label>
+                                <textarea 
+                                    required rows="4"
+                                    placeholder="I saw someone matching this description near Arat Kilo around 6 PM..."
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-gray-900 outline-none resize-none"
+                                    value={tipData.content}
+                                    onChange={(e) => setTipData({...tipData, content: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Contact Phone (Optional)</label>
+                                <div className="relative">
+                                    <Phone size={16} className="absolute left-4 top-3.5 text-gray-400" />
+                                    <input 
+                                        type="tel" 
+                                        placeholder="+251..."
+                                        className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none"
+                                        value={tipData.contact_phone}
+                                        onChange={(e) => setTipData({...tipData, contact_phone: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" disabled={isSubmittingTip}
+                                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isSubmittingTip ? "Sending..." : (
+                                    <>
+                                        <Send size={16} /> Send Anonymous Tip
+                                    </>
+                                )}
                             </button>
                         </form>
                     </div>
